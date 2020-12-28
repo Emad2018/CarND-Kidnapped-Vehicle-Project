@@ -103,8 +103,8 @@ void ParticleFilter::prediction(double delta_t, double std_pos[],
   //print();
 }
 
-vector<vector<LandmarkObs>> ParticleFilter::dataAssociation(vector<LandmarkObs> predicted,
-                                                            vector<LandmarkObs> &observations)
+std::vector<std::vector<LandmarkObs>> ParticleFilter::dataAssociation(vector<LandmarkObs> predicted,
+                                                                      vector<LandmarkObs> &observations)
 {
   /**
    * TODO: Find the predicted measurement that is closest to each 
@@ -116,6 +116,33 @@ vector<vector<LandmarkObs>> ParticleFilter::dataAssociation(vector<LandmarkObs> 
    */
   std::cout << "  predicted[0].id= " << predicted[0].id << "  predicted[0].x= " << predicted[0].x << "  predicted[0].y= " << predicted[0].y << "\n";
   std::cout << "  observations[0].id= " << observations[0].id << "  observations[0].x= " << observations[0].x << "  observations[0].y= " << observations[0].y << "\n";
+  vector<vector<LandmarkObs>> matches;
+
+  for (int i = 0; i < predicted.size(); ++i)
+  {
+    float ldist;
+    float small_dist = 10000;
+    int related_index;
+    bool found = false;
+    vector<LandmarkObs> match;
+    for (int j = 0; j < observations.size(); ++j)
+    {
+      ldist = dist(predicted[i].x, predicted[i].y, observations[j].x, observations[j].y);
+      if (ldist < small_dist)
+      {
+        small_dist = ldist;
+        related_index = j;
+        found = true;
+      }
+    }
+    if (found)
+    {
+      match.push_back(predicted[i]);
+      match.push_back(observations[related_index]);
+      matches.push_back(match);
+    }
+  }
+  return matches;
 }
 
 void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
@@ -170,16 +197,27 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
       observations_transformed.push_back(observation_transformed);
     }
     vector<vector<LandmarkObs>> matches = dataAssociation(predicted, observations_transformed);
-    //get pr0b for every partical
-    for (Map::single_landmark_s landmark : map_landmarks.landmark_list)
-    {
-      float xdiff = abs(x - landmark.x_f);
-      float ydiff = abs(y - landmark.y_f);
 
-      prob *= Gaussian(xdiff, ydiff, xm, ym, std_landmark);
-      //assign w
+    if (matches.size() > 0)
+    {
+      for (int i = 0; i < matches.size(); i++)
+      {
+        LandmarkObs match_predection = matches[i][0];
+        LandmarkObs match_observation = matches[i][1];
+        float xdiff = abs(x - match_predection.x);
+        float ydiff = abs(y - match_predection.y);
+        prob *= Gaussian(xdiff, ydiff, match_observation.x, match_observation.y, std_landmark);
+      }
+    }
+    else
+    {
+
+      prob = 0;
     }
 
+    //get prob for every partical
+    std::cout << "matches.size()= " << matches.size() << "\n";
+    std::cout << prob << "\n";
     particles[i].weight = prob;
   }
   /*
