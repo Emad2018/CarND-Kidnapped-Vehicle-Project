@@ -114,25 +114,27 @@ std::vector<std::vector<LandmarkObs>> ParticleFilter::dataAssociation(vector<Lan
    *   probably find it useful to implement this method and use it as a helper 
    *   during the updateWeights phase.
    */
-  std::cout << "  predicted[0].id= " << predicted[0].id << "  predicted[0].x= " << predicted[0].x << "  predicted[0].y= " << predicted[0].y << "\n";
-  std::cout << "  observations[0].id= " << observations[0].id << "  observations[0].x= " << observations[0].x << "  observations[0].y= " << observations[0].y << "\n";
-  vector<vector<LandmarkObs>> matches;
 
-  for (int i = 0; i < predicted.size(); ++i)
+  vector<vector<LandmarkObs>> matches;
+  //std::cout << "predicted.size= " << predicted.size() << "\n";
+  //std::cout << "observations.size= " << observations.size() << "\n";
+  for (int i = 0; i < observations.size(); i++)
   {
     float ldist;
     float small_dist = 10000;
     int related_index;
     bool found = false;
     vector<LandmarkObs> match;
-    for (int j = 0; j < observations.size(); ++j)
+    for (int j = 0; j < predicted.size(); ++j)
     {
       ldist = dist(predicted[i].x, predicted[i].y, observations[j].x, observations[j].y);
+
       if (ldist < small_dist)
       {
         small_dist = ldist;
         related_index = j;
         found = true;
+        //std::cout << "ldist= " << ldist << "\n";
       }
     }
     if (found)
@@ -162,7 +164,7 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
    *   and the following is a good resource for the actual equation to implement
    *   (look at equation 3.33) http://planning.cs.uiuc.edu/node99.html
    */
-  std::cout << "update \n";
+
   for (int i = 0; i < num_particles; ++i)
   {
     float x = particles[i].x;
@@ -182,7 +184,6 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
         predicted.push_back(closeest_landmark);
       }
     }
-    std::cout << "predicted.size= " << predicted.size() << "\n";
 
     for (LandmarkObs current_observation : observations)
     {
@@ -214,11 +215,15 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 
       prob = 0;
     }
-
-    //get prob for every partical
-    std::cout << "matches.size()= " << matches.size() << "\n";
-    std::cout << prob << "\n";
     particles[i].weight = prob;
+    //get prob for every partical
+    if (prob > 0)
+    {
+      std::cout << "  predicted x= " << matches[0][0].x << "  predicted y= " << matches[0][0].y << "\n";
+      std::cout << "  observations x= " << matches[0][1].x << "  observations y= " << matches[0][1].y << "\n";
+      std::cout << "matches.size()= " << matches.size() << "\n";
+      std::cout << prob << "\n";
+    }
   }
   /*
    if ((fabs((particle_x - current_landmark.x_f)) <= sensor_range) && (fabs((particle_y - current_landmark.y_f)) <= sensor_range))
