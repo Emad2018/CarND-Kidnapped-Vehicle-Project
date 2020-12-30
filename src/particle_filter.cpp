@@ -97,7 +97,7 @@ void ParticleFilter::prediction(double delta_t, double std_pos[],
   {
     double dv = velocity / yaw_rate;
     double dtheta = particles[i].theta + yaw_rate * delta_t;
-    if (yaw_rate < .0001)
+    if (fabs(yaw_rate) < .0001)
     {
       particles[i].x = particles[i].x + velocity * cos(particles[i].theta) * delta_t;
       particles[i].y = particles[i].y + velocity * sin(particles[i].theta) * delta_t;
@@ -146,7 +146,7 @@ std::vector<std::vector<LandmarkObs>> ParticleFilter::dataAssociation(vector<Lan
       //printf("mox= %f moy=%f \n", observations[i].x, observations[i].y);
       //printf("ldist = %f \n", ldist);
 
-      if (ldist < small_dist && ldist < 1)
+      if (ldist < small_dist)
       {
         small_dist = ldist;
         related_index = j;
